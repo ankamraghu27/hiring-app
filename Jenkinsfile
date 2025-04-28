@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     environment {
-        GIT_REPO = 'https://github.com/ankamraghu27/Hiring-app-argocd.git'
+        GIT_REPO = 'https://github.com/raghuankam27/Hiring-app-argocd.git'
         GIT_BRANCH = 'main'
         GIT_USER = 'ankamraghu27'
         GIT_EMAIL = 'your-email@example.com'
-        IMAGE_NAME = 'ankamraghu27/hiring-app'   // <== Updated for correct DockerHub repo
+        IMAGE_NAME = 'raghuankam27/hiring-app'   // <== Updated for correct DockerHub repo
     }
 
     stages {
