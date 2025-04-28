@@ -6,22 +6,31 @@ pipeline {
         GIT_BRANCH = 'main'
         GIT_USER = 'ankamraghu27'
         GIT_EMAIL = 'your-email@example.com'
+        IMAGE_NAME = 'ankamraghu27/hiring-app'   // <== Updated for correct DockerHub repo
     }
 
-    stages {   // <<< IMPORTANT: you missed `stages {`
-    
-        stage('Build and Push Docker Image') {
+    stages {
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Building Docker image...'
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                }
+            }
+        }
+
+        stage('Login to DockerHub & Push Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
                     script {
-                        echo 'Building Docker image...'
-                        sh 'docker build -t ankamraghu27/hiring-app:${BUILD_NUMBER} .'  // <<< Use your correct Docker Hub repo and dynamic tag
-
                         echo 'Logging into Docker Hub...'
-                        sh 'echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin'
+                        sh """
+                            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+                        """
 
                         echo 'Pushing Docker image to Docker Hub...'
-                        sh 'docker push ankamraghu27/hiring-app:${BUILD_NUMBER}'   // <<< Push the correct image
+                        sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                     }
                 }
             }
@@ -44,25 +53,24 @@ pipeline {
             }
         }
 
-        stage('Update K8S manifest & push to Repo') {
+        stage('Update K8S manifest & Push to Repo') {
             steps {
                 withCredentials([string(credentialsId: 'git', variable: 'GIT_TOKEN')]) {
                     script {
-                        echo "Updating deployment.yaml with new image name and tag: ankamraghu27/hiring-app:${BUILD_NUMBER}"
+                        echo "Updating deployment.yaml with new image name and tag: ${IMAGE_NAME}:${BUILD_NUMBER}"
                         sh """
                             cat /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
-                            sed -i "s#image: .*/hiring-app:.*#image: ankamraghu27/hiring-app:${BUILD_NUMBER}#" /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
+                            sed -i "s#image: .*/hiring-app:[0-9]*#image: ${IMAGE_NAME}:${BUILD_NUMBER}#" /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
                             cat /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
                             git add .
-                            git commit -m 'Updated the deploy yaml | Jenkins Pipeline'
+                            git commit -m 'Updated deployment.yaml with new Docker image | Jenkins Pipeline'
                             git push https://${GIT_USER}:${GIT_TOKEN}@github.com/${GIT_USER}/Hiring-app-argocd.git ${GIT_BRANCH}
                         """
                     }
                 }
             }
         }
-
-    }   // <<< end of stages
+    }
 
     post {
         always {
