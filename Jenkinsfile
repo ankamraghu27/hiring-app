@@ -20,21 +20,22 @@ pipeline {
             }
         }
 
-        stage('Login to DockerHub & Push Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
-                    script {
-                        echo 'Logging into Docker Hub...'
-                        sh """
-                            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
-                        """
+       stage('Login to DockerHub & Push Image') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+            script {
+                echo 'Logging into Docker Hub...'
+                sh """
+                    echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+                """
 
-                        echo 'Pushing Docker image to Docker Hub...'
-                        sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
-                    }
-                }
+                echo 'Pushing Docker image to Docker Hub...'
+                sh "docker push ${DOCKER_HUB_USERNAME}/hiring-app:${BUILD_NUMBER}"
             }
         }
+    }
+}
+
 
         stage('Checkout K8S manifest SCM') {
             steps {
