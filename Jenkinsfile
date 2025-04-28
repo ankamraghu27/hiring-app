@@ -37,22 +37,23 @@ pipeline {
         }
 
         stage('Update K8S manifest & push to Repo') {
-            steps {
-                script {
-                   withCredentials([string(credentialsId: 'git', variable: 'GIT_TOKEN')]) {
-                        sh """
-                        cat /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
-                        sed -i "s/8/${BUILD_NUMBER}/g" /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
-                        cat /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
-                        git add .
-                        git commit -m 'Updated the deploy yaml | Jenkins Pipeline'
-                        git remote -v
-                            git push https://${GIT_USER}:${GIT_TOKEN}@github.com/${GIT_USER}/Hiring-app-argocd.git ${GIT_BRANCH}
-                        """
-                    }
-                }
+    steps {
+        withCredentials([string(credentialsId: 'git', variable: 'GIT_TOKEN')]) {
+            script {
+                echo "Updating deployment.yaml with new image name and tag: ankamraghu27/hiring-app:${BUILD_NUMBER}"
+                sh """
+                    cat /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
+                    sed -i "s#image: .*/hiring-app:[0-9]*#image: ankamraghu27/hiring-app:${BUILD_NUMBER}#" /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
+                    cat /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
+                    git add .
+                    git commit -m 'Updated the deploy yaml | Jenkins Pipeline'
+                    git push https://${GIT_USER}:${GIT_TOKEN}@github.com/${GIT_USER}/Hiring-app-argocd.git ${GIT_BRANCH}
+                """
             }
         }
+    }
+}
+
     }
 
     post {
